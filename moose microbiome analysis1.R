@@ -31,13 +31,12 @@ otu_table1 <- read.csv('OTU_table_updated.csv', head=T, row.names=1)
 taxonomy1 <- read.csv('OTU_taxonomy_updated.csv')
 
 #remove duplicates at same level. Level options are from column names from taxonomic dataset. No need to do this
-combine_otus('Genus', table, taxonomy)
+#combine_otus('Genus', table, taxonomy)
 #save table
-write.csv(otu_table, file = "otuDataTable.csv")
+#write.csv(otu_table, file = "otuDataTable.csv")
 #To make a table containing only phyla with at least 10% abundance
 # in any one sample and were observed at any abundance in at least 10% of samples
-otuFilter <- filter_taxa(otu_table, abundance=0.01, persistence =5); str(otuFilter)
-otuFilter$new <- NULL
+
 otuFilter1 <- filter_taxa(otu_table1, abundance=0.01, persistence =5)
 
 #compare multiple filter runs
@@ -78,7 +77,7 @@ vare.mds_k2 <- isoMDS(jdist, k=2, maxit = 999) #this gets a stress pf 0.22 which
 vare.mds_k3 <- isoMDS(jdist, k=3, maxit = 999) #can try for other dimensions (k) 3 dimensions lowers stress. 3 dimensions is capturing the data variability
 
 # Check stress using a Shepard plot. You should see a relatively tight linear relationship. 
-stress_plot_values<-Shepard(jdist,vare.mds_k2$points)
+stress_plot_values<-Shepard(jdist,vare.mds_k3$points)
 plot(stress_plot_values, xlab="Original Jaccard Distance", ylab="Distance in NMDS Space", main=sprintf("k=2 stress=%.3f",vare.mds$stress))
 
 #plot
@@ -168,9 +167,14 @@ analysis.data %>%
   dplyr::mutate_at(vars(Latitude, Longitude),
                    funs(as.vector(scale(.)))) -> analysis.data.nonspatial
 
-cv_MRF_diag_rep(data = analysis.data.nonspatial, 
-                n_nodes = 42, n_cores = 3, family = 'binomial',
-                compare_null = T, plot = T)
+moose.mrf <- MRFcov(data = analysis.data.nonspatial[,
+                                                    1:42], n_nodes = 42, family = "binomial",
+                    n_cores = 3)
+
+cv_MRF_diag_rep_spatial(data = analysis.data[,
+                                             1:42], n_nodes = 42, family = "binomial",
+                        coords = coords, n_cores = 3, compare_null = T,
+                        plot = T, n_fold_runs = 100)
 
 # It seems that the CRF fits the data better. Now we compare a spatial vs
 # nonspatial CRF. First, the nonspatial model
